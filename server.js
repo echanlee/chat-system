@@ -4,6 +4,8 @@ var express = require("express");
 var bodyParser = require('body-parser');
 var formidable = require('formidable');
 var fs = require('fs');
+var MongoClient = require('mongodb').MongoClient;
+var url = "mongodb://localhost:27017/";
 
 var app = express();
 
@@ -127,7 +129,7 @@ io.on('connection', function(socket){
       console.log('User disconnected!');
 
       var i = usersCollection.findIndex(x => x.participant.id == socket.id);
-      usersCollection.splice(i, 1);
+      usersCollection[i].
 
       socket.broadcast.emit("friendsListChanged", usersCollection);
    });
@@ -138,7 +140,13 @@ io.on('connection', function(socket){
     console.log(message);
 
     console.log(usersCollection.find(x => x.participant.id == message.fromId));
-
+    const removeFluff = message.message.toString().replace(/[.,-\s]/g, '');
+    const creditCardRegex = new RegExp('^(?:4[0-9]{12}(?:[0-9]{3})?|[25][1-7][0-9]{14}|6(?:011|5[0-9][0-9])[0-9]{12}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|(?:2131|1800|35\d{3})\d{11})$');
+    console.log(removeFluff);
+    if(removeFluff.match(creditCardRegex) !== null) {
+      console.log('do not send credit card');
+      message.message = 'I do not want to send my credit card';
+    }
     io.to(message.toId).emit("messageReceived", {
       user: usersCollection.find(x => x.participant.id == message.fromId).participant,
       message: message
